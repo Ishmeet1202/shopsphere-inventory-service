@@ -11,12 +11,12 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Inventory extends AuditingBaseEntity {
+public class Inventory extends AuditBaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id", nullable = false, unique = true)
     private String productId;
 
     @Column(name = "available_quantity", nullable = false)
