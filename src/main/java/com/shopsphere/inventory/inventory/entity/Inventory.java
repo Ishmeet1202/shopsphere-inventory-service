@@ -16,7 +16,10 @@ public class Inventory extends AuditBaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(name = "product_id", nullable = false, unique = true)
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
+
+    @Column(name = "product_id", nullable = false)
     private String productId;
 
     @Column(name = "available_quantity", nullable = false)
