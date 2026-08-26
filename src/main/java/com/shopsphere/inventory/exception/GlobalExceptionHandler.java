@@ -18,6 +18,7 @@ public class GlobalExceptionHandler {
     private final static String VALIDATION_ERROR = "VALIDATION_ERROR";
     private final static String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
     private final static String MISSING_TENANT_CONTEXT = "MISSING_TENANT_CONTEXT";
+    private final static String DUPLICATE_INVENTORY = "DUPLICATE_INVENTORY";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDto> handleMethodArgumentNotValid(
@@ -49,6 +50,22 @@ public class GlobalExceptionHandler {
                         LocalDateTime.now(),
                         HttpStatus.BAD_REQUEST.value(),
                         MISSING_TENANT_CONTEXT,
+                        ex.getMessage(),
+                        null,
+                        request
+                ));
+    }
+
+    @ExceptionHandler(DuplicateInventoryException.class)
+    public ResponseEntity<ErrorResponseDto> handleDuplicateInventory(
+            DuplicateInventoryException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(buildErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.CONFLICT.value(),
+                        DUPLICATE_INVENTORY,
                         ex.getMessage(),
                         null,
                         request

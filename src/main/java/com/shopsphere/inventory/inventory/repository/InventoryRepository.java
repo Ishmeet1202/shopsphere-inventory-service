@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, String> {
     Optional<Inventory> findByProductIdAndTenantId(String productId, String tenantId);
+    boolean existsByProductIdAndTenantId(String productId, String tenantId);
 }

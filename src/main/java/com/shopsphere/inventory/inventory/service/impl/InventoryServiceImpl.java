@@ -1,5 +1,6 @@
 package com.shopsphere.inventory.inventory.service.impl;
 
+import com.shopsphere.inventory.exception.DuplicateInventoryException;
 import com.shopsphere.inventory.inventory.dto.request.InventoryCreateRequestDto;
 import com.shopsphere.inventory.inventory.dto.response.InventoryResponseDto;
 import com.shopsphere.inventory.inventory.entity.Inventory;
@@ -27,6 +28,13 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryResponseDto createInventory(InventoryCreateRequestDto request) {
         String tenantId = TenantContext.requireTenantId();
         LOGGER.info("createInventory: productId={}, quantity={}, tenantId={}", request.getProductId(), request.getQuantity(), tenantId);
+
+        boolean exists = inventoryRepository.existsByProductIdAndTenantId(request.getProductId(), tenantId);
+
+        if (exists) {
+            LOGGER.error("createInventory: inventory already exists for productId={}, tenantId={}", request.getProductId(), tenantId);
+            throw new DuplicateInventoryException("Inventory already exists for the given product and tenant");
+        }
 
         Inventory inventory = inventoryMapper.toInventoryEntity(request);
 
