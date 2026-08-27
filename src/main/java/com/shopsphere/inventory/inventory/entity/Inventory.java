@@ -4,7 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "inventory")
+@Table(
+        name = "inventory",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_inventory_tenant_product",
+                        columnNames = {"tenant_id", "product_id"}
+                )
+        }
+)
 @Getter
 @Setter
 @ToString
