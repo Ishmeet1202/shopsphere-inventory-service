@@ -1,12 +1,15 @@
 package com.shopsphere.inventory.inventory.service.impl;
 
 import com.shopsphere.inventory.exception.DuplicateInventoryException;
+import com.shopsphere.inventory.exception.InvalidStockAdjustmentException;
 import com.shopsphere.inventory.exception.InventoryNotFoundException;
 import com.shopsphere.inventory.inventory.dto.request.AddStockRequestDto;
+import com.shopsphere.inventory.inventory.dto.request.AdjustStockRequestDto;
 import com.shopsphere.inventory.inventory.dto.request.InventoryCreateRequestDto;
 import com.shopsphere.inventory.inventory.dto.response.InventoryResponseDto;
 import com.shopsphere.inventory.inventory.entity.Inventory;
 import com.shopsphere.inventory.inventory.entity.StockMovement;
+import com.shopsphere.inventory.inventory.enums.StockAdjustmentType;
 import com.shopsphere.inventory.inventory.enums.StockMovementType;
 import com.shopsphere.inventory.inventory.mapper.InventoryMapper;
 import com.shopsphere.inventory.inventory.mapper.StockMovementMapper;
@@ -29,6 +32,7 @@ public class InventoryServiceImpl implements InventoryService {
     private static final String INVENTORY_NOT_FOUND = "Inventory not found for productId: ";
     private static final String STOCK_ADDED_REASON = "Stock added";
     private static final String STOCK_ADDED_REASON_NEW_PRODUCT = "Initial stock";
+    private static final String INVALID_STOCK_ADJUSTMENT = "Invalid stock adjustment: resulting quantity cannot be negative";
 
     private final InventoryRepository inventoryRepository;
     private final InventoryMapper inventoryMapper;
@@ -113,9 +117,63 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryMapper.toInventoryResponseDto(inventory);
     }
 
+    @Override
+    @Transactional
+    public InventoryResponseDto adjustStock(String productId, AdjustStockRequestDto request) {
+        String tenantId = TenantContext.requireTenantId();
+        LOGGER.info("adjustStock: productId={}, adjustedQuantity={}, tenantId={}", productId, request.getQuantity(), tenantId);
+
+        Inventory inventory = inventoryRepository.findByProductIdAndTenantId(productId, tenantId)
+                .orElseThrow(() -> {
+                    LOGGER.error("adjustStock: inventory not found for productId={}, tenantId={}", productId, tenantId);
+                    return new InventoryNotFoundException(INVENTORY_NOT_FOUND + productId);
+                });
+
+        Integer oldQuantity = inventory.getAvailableQuantity();
+        Integer newQuantity = resolveAdjustmentQuantity(
+                request.getType(),
+                oldQuantity,
+                request.getQuantity()
+        );
+
+        if (newQuantity < 0) {
+            LOGGER.error("adjustStock: invalid stock adjustment for productId={}, oldQuantity={}, adjustedQuantity={}, newQuantity={}, tenantId={}",
+                    productId, oldQuantity, request.getQuantity(), newQuantity, tenantId);
+            throw new InvalidStockAdjustmentException(INVALID_STOCK_ADJUSTMENT);
+        }
+
+        inventory.setAvailableQuantity(newQuantity);
+        inventory = inventoryRepository.save(inventory);
+
+        Integer movementQuantity = StockAdjustmentType.DECREASE == request.getType()
+                ? -request.getQuantity()
+                : request.getQuantity();
+
+        StockMovement stockMovement = stockMovementMapper.toStockMovementEntity(
+                tenantId,
+                productId,
+                StockMovementType.ADJUSTMENT,
+                movementQuantity,
+                request.getReason(),
+                null,
+                null
+        );
+        stockMovementRepository.save(stockMovement);
+        LOGGER.info("adjustStock: updated inventory for productId={}, oldQuantity={}, newQuantity={}, tenantId={}", productId, oldQuantity, newQuantity, tenantId);
+
+        return inventoryMapper.toInventoryResponseDto(inventory);
+    }
+
 
     private void initializeNewInventory(Inventory inventory, String tenantId) {
         inventory.setReservedQuantity(0);
         inventory.setTenantId(tenantId);
+    }
+
+    private Integer resolveAdjustmentQuantity(StockAdjustmentType type, Integer oldQuantity, Integer adjustedQuantity) {
+        return switch (type) {
+            case INCREASE -> oldQuantity + adjustedQuantity;
+            case DECREASE -> oldQuantity - adjustedQuantity;
+        };
     }
 }

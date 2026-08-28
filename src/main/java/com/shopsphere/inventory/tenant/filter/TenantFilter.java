@@ -45,7 +45,7 @@ public class TenantFilter extends OncePerRequestFilter {
             }
 
             TenantContext.setCurrentTenant(tenantId);
-            LOGGER.info("Set tenant ID in context: {}", tenantId);
+            LOGGER.debug("Set tenant ID in context: {}", tenantId);
 
             filterChain.doFilter(request, response);
         } catch (MissingTenantContextException ex) {
