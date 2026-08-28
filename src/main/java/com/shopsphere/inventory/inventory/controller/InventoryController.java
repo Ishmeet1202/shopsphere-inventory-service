@@ -49,7 +49,7 @@ public class InventoryController {
                 .body(response);
     }
 
-    @PostMapping("/{productId}/adjustment")
+    @PostMapping("/{productId}/adjustments")
     public ResponseEntity<InventoryResponseDto> adjustStock(
             @PathVariable(name = "productId") String productId,
             @Valid @RequestBody AdjustStockRequestDto request
