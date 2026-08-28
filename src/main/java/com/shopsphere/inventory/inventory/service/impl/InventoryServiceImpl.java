@@ -6,8 +6,12 @@ import com.shopsphere.inventory.inventory.dto.request.AddStockRequestDto;
 import com.shopsphere.inventory.inventory.dto.request.InventoryCreateRequestDto;
 import com.shopsphere.inventory.inventory.dto.response.InventoryResponseDto;
 import com.shopsphere.inventory.inventory.entity.Inventory;
+import com.shopsphere.inventory.inventory.entity.StockMovement;
+import com.shopsphere.inventory.inventory.enums.StockMovementType;
 import com.shopsphere.inventory.inventory.mapper.InventoryMapper;
+import com.shopsphere.inventory.inventory.mapper.StockMovementMapper;
 import com.shopsphere.inventory.inventory.repository.InventoryRepository;
+import com.shopsphere.inventory.inventory.repository.StockMovementRepository;
 import com.shopsphere.inventory.inventory.service.InventoryService;
 import com.shopsphere.inventory.tenant.context.TenantContext;
 import jakarta.transaction.Transactional;
@@ -23,9 +27,12 @@ public class InventoryServiceImpl implements InventoryService {
     private static final Logger LOGGER = LoggerFactory.getLogger(InventoryServiceImpl.class);
     private static final String INVENTORY_ALREADY_EXISTS = "Inventory already exists for the given product and tenant";
     private static final String INVENTORY_NOT_FOUND = "Inventory not found for productId: ";
+    private static final String STOCK_ADDED_REASON = "Stock added for productId: ";
 
     private final InventoryRepository inventoryRepository;
     private final InventoryMapper inventoryMapper;
+    private final StockMovementMapper stockMovementMapper;
+    private final StockMovementRepository stockMovementRepository;
 
     @Override
     @Transactional
@@ -45,6 +52,17 @@ public class InventoryServiceImpl implements InventoryService {
         initializeNewInventory(inventory, tenantId);
 
         inventory = inventoryRepository.save(inventory);
+
+        StockMovement stockMovement = stockMovementMapper.toStockMovementEntity(
+                tenantId,
+                inventory.getProductId(),
+                StockMovementType.STOCK_IN,
+                request.getQuantity(),
+                STOCK_ADDED_REASON + inventory.getProductId(),
+                null,
+                null
+        );
+        stockMovementRepository.save(stockMovement);
         LOGGER.info("createInventory: saved inventory for productId={}, tenantId={}", inventory.getProductId(), tenantId);
         return inventoryMapper.toInventoryResponseDto(inventory);
     }
@@ -78,6 +96,17 @@ public class InventoryServiceImpl implements InventoryService {
 
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + request.getQuantity());
         inventory = inventoryRepository.save(inventory);
+
+        StockMovement stockMovement = stockMovementMapper.toStockMovementEntity(
+                tenantId,
+                productId,
+                StockMovementType.STOCK_IN,
+                request.getQuantity(),
+                STOCK_ADDED_REASON + productId,
+                null,
+                null
+        );
+        stockMovementRepository.save(stockMovement);
         LOGGER.info("addStock: updated inventory for productId={}, newQuantity={}, tenantId={}", productId, inventory.getAvailableQuantity(), tenantId);
 
         return inventoryMapper.toInventoryResponseDto(inventory);
