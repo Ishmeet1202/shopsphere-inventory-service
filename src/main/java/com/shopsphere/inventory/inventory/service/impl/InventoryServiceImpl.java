@@ -27,7 +27,8 @@ public class InventoryServiceImpl implements InventoryService {
     private static final Logger LOGGER = LoggerFactory.getLogger(InventoryServiceImpl.class);
     private static final String INVENTORY_ALREADY_EXISTS = "Inventory already exists for the given product and tenant";
     private static final String INVENTORY_NOT_FOUND = "Inventory not found for productId: ";
-    private static final String STOCK_ADDED_REASON = "Stock added for productId: ";
+    private static final String STOCK_ADDED_REASON = "Stock added";
+    private static final String STOCK_ADDED_REASON_NEW_PRODUCT = "Initial stock";
 
     private final InventoryRepository inventoryRepository;
     private final InventoryMapper inventoryMapper;
@@ -58,7 +59,7 @@ public class InventoryServiceImpl implements InventoryService {
                 inventory.getProductId(),
                 StockMovementType.STOCK_IN,
                 request.getQuantity(),
-                STOCK_ADDED_REASON + inventory.getProductId(),
+                STOCK_ADDED_REASON_NEW_PRODUCT,
                 null,
                 null
         );
@@ -102,7 +103,7 @@ public class InventoryServiceImpl implements InventoryService {
                 productId,
                 StockMovementType.STOCK_IN,
                 request.getQuantity(),
-                STOCK_ADDED_REASON + productId,
+                STOCK_ADDED_REASON,
                 null,
                 null
         );
