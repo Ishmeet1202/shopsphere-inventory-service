@@ -20,6 +20,7 @@ public class GlobalExceptionHandler {
     private final static String MISSING_TENANT_CONTEXT = "MISSING_TENANT_CONTEXT";
     private final static String DUPLICATE_INVENTORY = "DUPLICATE_INVENTORY";
     private final static String INVENTORY_NOT_FOUND = "INVENTORY_NOT_FOUND";
+    private final static String INVALID_STOCK_ADJUSTMENT = "INVALID_STOCK_ADJUSTMENT";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDto> handleMethodArgumentNotValid(
@@ -83,6 +84,22 @@ public class GlobalExceptionHandler {
                         LocalDateTime.now(),
                         HttpStatus.NOT_FOUND.value(),
                         INVENTORY_NOT_FOUND,
+                        ex.getMessage(),
+                        null,
+                        request
+                ));
+    }
+
+    @ExceptionHandler(InvalidStockAdjustmentException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidStockAdjustment(
+            InvalidStockAdjustmentException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(buildErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        INVALID_STOCK_ADJUSTMENT,
                         ex.getMessage(),
                         null,
                         request

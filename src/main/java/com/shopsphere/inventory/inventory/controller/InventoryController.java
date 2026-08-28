@@ -1,6 +1,7 @@
 package com.shopsphere.inventory.inventory.controller;
 
 import com.shopsphere.inventory.inventory.dto.request.AddStockRequestDto;
+import com.shopsphere.inventory.inventory.dto.request.AdjustStockRequestDto;
 import com.shopsphere.inventory.inventory.dto.request.InventoryCreateRequestDto;
 import com.shopsphere.inventory.inventory.dto.response.InventoryResponseDto;
 import com.shopsphere.inventory.inventory.service.InventoryService;
@@ -43,6 +44,17 @@ public class InventoryController {
             @Valid @RequestBody AddStockRequestDto request
     ) {
         InventoryResponseDto response = inventoryService.addStock(productId, request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @PostMapping("/{productId}/adjustments")
+    public ResponseEntity<InventoryResponseDto> adjustStock(
+            @PathVariable(name = "productId") String productId,
+            @Valid @RequestBody AdjustStockRequestDto request
+    ) {
+        InventoryResponseDto response = inventoryService.adjustStock(productId, request);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
